@@ -12,8 +12,8 @@ jobs:
               run: |
                 ISSUE_NUMBER='${{github.event.issue.number}}'
                 echo $ISSUE_NUMBER
-            - name: 'Write comment'
-              uses: peter-evans/create-or-update-comment@v4
+            - name: Write comment
+              uses: peter-evans/create-or-update-comment@v1
               with:
                 issue-number: ${{github.event.issue.number}}
                 body: |
