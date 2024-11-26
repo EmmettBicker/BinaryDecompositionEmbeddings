@@ -21,6 +21,6 @@ jobs:
     runs-on: [ubuntu-latest, win]
     steps:
       # - uses: actions/checkout@v4.2.2
-        name: goodbye
+      - name: goodbye
         run: echo "Goodbye world"
         shell: bash
