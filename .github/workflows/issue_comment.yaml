@@ -8,13 +8,18 @@ jobs:
     comment-with-action:
         runs-on: ubuntu-latest
         steps:
-            - name: "dump github context" 
+            - name: Get issue number
               run: |
-                echo "${{ toJSON(github.event)}}"
-    comment-with-action-jq:
-        runs-on: ubuntu-latest
-        steps:
-            - name: "dump github context" 
-              run: |
-                echo '${{ toJSON(github.event)}}' | jq
-            
+                ISSUE_NUMBER='${github.event.issue.number}'
+                echo ISSUE_NUMBER
+            - name: 'Write comment'
+              uses: peter-evans/create-or-update-comment@v4
+              with:
+                issue-number: 1
+                body: |
+                    This is a multi-line test comment
+                    - With GitHub **Markdown** :sparkles:
+                    - Created by [create-or-update-comment][1]
+        
+                    [1]: https://github.com/peter-evans/create-or-update-comment
+                reactions: '+1'
