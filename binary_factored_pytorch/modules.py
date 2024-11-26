@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from torch import Tensor
+from typing import Optional
 
 
 class BinaryDecompositionEmbedding(nn.Linear):
@@ -10,8 +11,8 @@ class BinaryDecompositionEmbedding(nn.Linear):
                  num_embeddings: int,
                  embedding_dim: int,
                  bias: bool = True,
-                 device=None,
-                 dtype=None,):
+                 device: Optional[torch.device] = None,
+                 dtype: Optional[torch.dtype] = None,):
         if not self._is_power_of_two(num_embeddings):
             raise ValueError("num_elements must be a power of two")
 
