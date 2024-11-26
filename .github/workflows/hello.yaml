@@ -11,7 +11,10 @@ on:
 
 jobs:
   hello:
-    runs-on: [ubuntu-latest, win]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4.2.2
       - name: hello_world
