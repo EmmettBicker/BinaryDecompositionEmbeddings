@@ -10,7 +10,7 @@ jobs:
         steps:
             - name: Get issue number
               run: |
-                ISSUE_NUMBER='${github.event.issue.number}'
+                ISSUE_NUMBER='${{github.event.issue.number}}'
                 echo $ISSUE_NUMBER
             - name: 'Write comment'
               uses: peter-evans/create-or-update-comment@v4
