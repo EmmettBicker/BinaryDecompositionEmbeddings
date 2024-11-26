@@ -2,68 +2,114 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+from torch import Tensor
 
 
-class BinaryFactoredEmbedding(nn.Embedding):  # type: ignore
-    def __init__(self, num_embeddings: int, **kwargs):  # type: ignore
-        """
-        Args:
-            num_embeddings (int): _description_
-            embedding_dim (int): _description_
-        """
-        assert math.log2(num_embeddings) == int(math.log2(num_embeddings)), \
-            "num_elements must be a power of two"
+class BinaryDecompositionEmbedding(nn.Linear):
+    def __init__(self,
+                 num_embeddings: int,
+                 embedding_dim: int,
+                 bias: bool = True,
+                 device=None,
+                 dtype=None,):
+        if not self._is_power_of_two(num_embeddings):
+            raise ValueError("num_elements must be a power of two")
+
+        if num_embeddings == 1:
+            raise ValueError("num_elements cannot be one")
+
+        self.binary_factors = int(math.log2(num_embeddings))
 
         super().__init__(  # type: ignore
-            int(math.log2(num_embeddings)),
-            kwargs
+            self.binary_factors,
+            embedding_dim,
+            bias,
+            device,
+            dtype,
         )
 
+    def forward(self, input: Tensor) -> Tensor:
+        if not self._is_discrete(input):
+            raise ValueError(
+                "input tensor must be in: "
+                "torch.int8, torch.uint8, "
+                "torch.int16, torch.int32, "
+                "torch.int64"
+            )
+
+        binary = to_binary(input, num_bits=self.binary_factors)
+        binary_pm = 2 * binary.float() - 1
+        return super().forward(binary_pm)
+
+    @staticmethod
+    def _is_power_of_two(n: int):
+        return n > 0 and int(math.log2(n)) == math.log2(n)
+
+    @staticmethod
+    def _is_discrete(t: Tensor):
+        return t.dtype in (torch.int8, torch.uint8,
+                           torch.int16, torch.int32,
+                           torch.int64)
 
 
-# def to_binary(tensor: torch.Tensor, num_bits: int = 18) -> torch.Tensor:
-#     tensor = tensor.to(torch.int32)
-#     binary = tensor.unsqueeze(-1).bitwise_and(
-#         2**torch.arange(num_bits, dtype=torch.int32).to(tensor.device)
-#         ).bool().float()
-#     return binary
+def to_binary(
+        tensor: torch.Tensor,
+        num_bits: int = 18,
+        return_type: torch.dtype = torch.float
+        ) -> torch.Tensor:
+    binary = tensor.unsqueeze(-1).bitwise_and(
+            2**torch.arange(num_bits, dtype=tensor.dtype)
+            .__reversed__().to(tensor.device)
+        ).bool().to(return_type)
+    return binary
 
 
-# def binary_embedding(tensor: torch.Tensor, num_bits: int) -> torch.Tensor:
-#     # Convert to bits
-#     binary = tensor.unsqueeze(-1).bitwise_and(
-#         2**torch.arange(num_bits).to(tensor.device)).bool()
-#     # binary = binary.flip(-1)
+def binary_decomposition_cross_entropy(
+        input: torch.Tensor,
+        target: torch.Tensor,
+        pad_token: int | None = None,
+        reduction: str = "mean",
+        stable_mean: bool = False,
+        ) -> torch.Tensor:
+    if input.shape[:-1] != target.shape:
+        raise ValueError("input.shape must be (*D, num_bits) "
+                         "where D = target.shape. Instead recieved "
+                         f"input.shape = {input.shape} "
+                         f"target.shape = {target.shape}")
+    num_bits = input.size(-1)
 
-#     # Convert zeros to -1s
-#     binary_pm = 2 * binary.float() - 1
-#     return self.binary_text_embeddings(binary_pm)
+    if reduction not in ["mean", "none"]:
+        raise ValueError("reduction must be 'mean' or 'none'")
 
+    if pad_token is not None:
+        padding_mask = (target != pad_token).float()
+    else:
+        padding_mask = torch.ones_like(target)
 
-# def masked_binary_cross_entropy(output_logits: torch.Tensor,
-#                                 source_tokens: torch.Tensor,
-#                                 pad_token: int,
-#                                 num_bits: int = 18) -> torch.Tensor:
-#     padding_mask = (source_tokens != pad_token).float()
-#     target_binary = to_binary(source_tokens, num_bits)
+    target_binary = to_binary(target, num_bits)
 
-#     expanded_mask = padding_mask.unsqueeze(-1).expand_as(target_binary)
+    expanded_mask = padding_mask.unsqueeze(-1).expand_as(target_binary)
 
-#     # Flatten all tensors
-#     output_flat = output_logits.reshape(-1)
-#     target_flat = target_binary.reshape(-1)
-#     mask_flat = expanded_mask.reshape(-1)
+    # # Flatten all tensors
+    # output_flat = input.reshape(-1)
+    # target_flat = target_binary.reshape(-1)
+    # mask_flat = expanded_mask.reshape(-1)
 
-#     # Compute binary cross entropy with logits
-#     elementwise_loss = F.binary_cross_entropy(
-#         torch.sigmoid(output_flat),
-#         target_flat,
-#         reduction='none'
-#     )
+    # Compute binary cross entropy with logits
+    elementwise_loss = F.binary_cross_entropy_with_logits(
+        input.float(),
+        target_binary,
+        reduction='none'
+    )
+    # Apply mask and compute mean over non-padding elements
+    masked_loss = elementwise_loss * expanded_mask
 
-#     # Apply mask and compute mean over non-padding elements
-#     masked_loss = elementwise_loss * mask_flat
-#     num_valid = mask_flat.sum()
+    if reduction == 'none':
+        return masked_loss
+    assert reduction == 'mean'
+    # elif reduction == 'mean': implicit conditional
 
-#     # Return average loss over non-padding elements
-#     return masked_loss.sum() / (num_valid + 1e-6)
+    num_valid = expanded_mask.sum()
+
+    # Return average loss over non-padding elements
+    return masked_loss.sum() / (num_valid + (1e-6 if stable_mean else 0))

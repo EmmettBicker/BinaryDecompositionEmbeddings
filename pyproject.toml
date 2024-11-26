@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Emmett's work on the mit 6031 course"
 authors = ["Emmett"]
 readme = "README.md"
-package-mode = false
+packages = [
+    { include = "binary_factored_pytorch" }  # Point to your package directory
+]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 torch = "^2.0.0"
+numpy = "^2.1.3"
 
 
 [tool.poetry.group.dev.dependencies]
