@@ -1,4 +1,7 @@
+# VS Code
 .vscode/
-.pytest_cache/
 
+# Caches
+.pytest_cache/
+.mypy_cache
 **/__pycache__/

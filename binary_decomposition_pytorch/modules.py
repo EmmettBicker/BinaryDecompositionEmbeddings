@@ -11,8 +11,9 @@ class BinaryDecompositionEmbedding(nn.Linear):
                  num_embeddings: int,
                  embedding_dim: int,
                  bias: bool = True,
-                 device: Optional[torch.device] = None,
-                 dtype: Optional[torch.dtype] = None,):
+                 device = None,  # noqa # type: ignore
+                 dtype = None,   # noqa # type: ignore
+                 ):
         if not self._is_power_of_two(num_embeddings):
             raise ValueError("num_elements must be a power of two")
 
@@ -56,7 +57,7 @@ class BinaryDecompositionEmbedding(nn.Linear):
 def to_binary(
         tensor: torch.Tensor,
         num_bits: int = 18,
-        return_type: torch.dtype = torch.float
+        return_type = torch.float  # noqa # type: ignore
         ) -> torch.Tensor:
     binary = tensor.unsqueeze(-1).bitwise_and(
             2**torch.arange(num_bits, dtype=tensor.dtype)
@@ -68,7 +69,7 @@ def to_binary(
 def binary_decomposition_cross_entropy(
         input: torch.Tensor,
         target: torch.Tensor,
-        pad_token: int | None = None,
+        pad_token: Optional[int] = None,
         reduction: str = "mean",
         stable_mean: bool = False,
         ) -> torch.Tensor:

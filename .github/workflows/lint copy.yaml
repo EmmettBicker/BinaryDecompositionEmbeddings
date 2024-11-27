@@ -1,4 +1,4 @@
-name: Test Code
+name: Typecheck Code
 
 on:
   workflow_dispatch:
@@ -11,20 +11,17 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        python_version: ['3.9', '3.12']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v3
         with:
-          python-version: ${{matrix.python_version}}
+          python-version: '3.12'
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
       - name: Install dependencies with Poetry
         run: poetry install
       - name: Test code
-        run: poetry run pytest
+        run: poetry run mypy .
         

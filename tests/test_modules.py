@@ -2,9 +2,9 @@ import warnings
 import pytest
 import torch
 import torch.nn as nn
-from binary_factored_pytorch import (BinaryDecompositionEmbedding,
-                                     to_binary,
-                                     binary_decomposition_cross_entropy)
+from binary_decomposition_pytorch import (BinaryDecompositionEmbedding,
+                                          to_binary,
+                                          binary_decomposition_cross_entropy)
 import torch.nn.functional as F
 torch.manual_seed(0x01134)  # type: ignore
 """
