@@ -11,10 +11,15 @@ on:
 
 jobs:
   test:
+    strategy:
+      matrix:
+        python_version: [3.9, 3.10, 3.11, 3.12]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v3
+        with:
+          python-version: ${{matrix.python_version}}
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
