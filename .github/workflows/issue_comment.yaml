@@ -17,4 +17,4 @@ jobs:
                 issue-number: ${{github.event.issue.number}}
                 body: |
                     Hi! Thanks for leaving an issue on this repository.
-                    Notifying @EmmettBicker to take a look.
+                    Notifying @EmmettBicker to take a look. 
