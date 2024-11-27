@@ -5,7 +5,7 @@ description = "Emmett's work on the mit 6031 course"
 authors = ["Emmett"]
 readme = "README.md"
 packages = [
-    { include = "binary_factored_pytorch" }  # Point to your package directory
+    { include = "binary_decomposition_pytorch" }  # Point to your package directory
 ]
 
 [tool.poetry.dependencies]

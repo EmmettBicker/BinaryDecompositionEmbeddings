@@ -20,10 +20,10 @@ class BinaryDecompositionEmbedding(nn.Linear):
         if num_embeddings == 1:
             raise ValueError("num_elements cannot be one")
 
-        self.binary_factors = int(math.log2(num_embeddings))
+        self.binary_indices = int(math.log2(num_embeddings))
 
         super().__init__(  # type: ignore
-            self.binary_factors,
+            self.binary_indices,
             embedding_dim,
             bias,
             device,
@@ -39,7 +39,7 @@ class BinaryDecompositionEmbedding(nn.Linear):
                 "torch.int64"
             )
 
-        binary = to_binary(input, num_bits=self.binary_factors)
+        binary = to_binary(input, num_bits=self.binary_indices)
         binary_pm = 2 * binary.float() - 1
         return super().forward(binary_pm)
 
